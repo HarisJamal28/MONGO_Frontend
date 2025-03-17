@@ -11,28 +11,44 @@ async function fetchTasks() {
     tasks.forEach(task => {
         const li = document.createElement("li");
         li.innerHTML = `
-            ${task.title} - ${task.description}
+            <span id="task-${task._id}">${task.title} - ${task.description}</span>
+            <div class="buttons_grid">
+            <button onclick="editTask('${task._id}', '${task.title}', '${task.description}')">Edit</button>
             <button onclick="deleteTask('${task._id}')">Delete</button>
+            </div>
+
         `;
         taskList.appendChild(li);
     });
 }
 
-// Add new task
+// Add or Update task
 document.getElementById("task-form").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const title = document.getElementById("title").value;
     const description = document.getElementById("description").value;
+    const taskId = document.getElementById("task-id").value;
 
-    await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description })
-    });
+    if (taskId) {
+        // Update Task
+        await fetch(`${API_URL}/${taskId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, description })
+        });
+    } else {
+        // Create New Task
+        await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, description })
+        });
+    }
 
-    document.getElementById("title").value = "";
-    document.getElementById("description").value = "";
+    // Clear Form & Fetch Updated List
+    document.getElementById("task-form").reset();
+    document.getElementById("task-id").value = "";
     
     fetchTasks();
 });
@@ -41,6 +57,13 @@ document.getElementById("task-form").addEventListener("submit", async (e) => {
 async function deleteTask(id) {
     await fetch(`${API_URL}/${id}`, { method: "DELETE" });
     fetchTasks();
+}
+
+// Edit Task - Populate Form
+function editTask(id, title, description) {
+    document.getElementById("title").value = title;
+    document.getElementById("description").value = description;
+    document.getElementById("task-id").value = id;
 }
 
 // Initial fetch
